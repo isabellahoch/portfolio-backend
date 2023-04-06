@@ -1,0 +1,13 @@
+{
+    "sections": [
+      {
+        "title": "Resume",
+        "id": "resume"
+      },
+      {
+        "title": "About",
+        "id": "about"
+      }
+    ]
+  }
+  
