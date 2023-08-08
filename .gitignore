@@ -1,0 +1,29 @@
+# Ignore Node.js modules
+node_modules/
+
+# Ignore the secret key file(s)
+key.json
+src/key.json
+/src/key.json
+
+# Ignore macOS system files
+.DS_Store
+
+# Ignore log files
+*.log
+
+# Ignore environment variables file (if applicable)
+.env
+
+# Ignore compiled TypeScript files (if applicable)
+/dist/
+
+# Ignore IDE-specific files and directories
+.idea/
+.vscode/
+
+# Ignore package-lock.json for npm
+package-lock.json
+
+# Ignore yarn.lock for Yarn
+yarn.lock
