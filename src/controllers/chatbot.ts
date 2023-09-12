@@ -3,11 +3,12 @@ import { Request, Response } from 'express';
 import DialogflowService from '../services/dialogFlow';
 
 const projectId: string = process.env.PROJECT_ID || '';
+const credentialsPath: string = process.env.CREDENTIALS_PATH || '';
 
 // Initialize DialogflowService with your config
 const dialogflowService = new DialogflowService({
   projectId,
-  credentialsPath: '../../key.json',
+  credentialsPath,
 });
 
 
