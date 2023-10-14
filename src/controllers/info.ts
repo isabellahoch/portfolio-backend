@@ -1,4 +1,7 @@
 import { Request, Response } from 'express';
+import { collection, getDocs, addDoc, setDoc, doc } from 'firebase/firestore';
+import { Badge } from '../models';
+import { db } from '..';
 
 export const fetchAbout = (req: Request, res: Response) => {
   res.status(200).json("Here's a little bit about me!");
@@ -102,12 +105,68 @@ const badges: {
   }
 }
 
-export const fetchBadges = (req: Request, res: Response) => {
+export const fetchBadgesStatic = (req: Request, res: Response) => {
   const { key } = req.query;
   if(key === undefined || badges[key as string] === undefined) {
     res.status(200).json(badges);
   }
   else {
     res.status(200).json(badges[key as string]);
+  }
+};
+
+const createBadges = async (badgesData: any) => {
+  try {
+    for (const category in badgesData) {
+      for (const key in badgesData[category]) {
+        const formattedKey = key.charAt(0).toUpperCase() + key.slice(1).toLowerCase().replace(/\s/g, '');
+        const badgeData = {
+          title: formattedKey,
+          url: badgesData[category][key],
+          category: category,
+        };
+        const badgeId = key.toLowerCase().replace(/\s/g, '');
+        const badgeRef = doc(collection(db, 'badges'), badgeId);
+        await setDoc(badgeRef, badgeData);
+        console.log(`Badge document with ID: ${badgeId} created.`);
+      }
+    }
+  } catch (error) {
+    console.error('Error creating badge documents: ', error);
+  }
+};
+
+export const fetchBadges = async (req: Request, res: Response) => {
+  try {
+    const badgesCollection = collection(db, 'badges');
+    const badgesSnapshot = await getDocs(badgesCollection);
+
+    const orderByCategory = true;
+
+    const badges: Badge[] = [];
+    badgesSnapshot.forEach((doc) => {
+      const badgeData = doc.data() as Badge;
+      badgeData.id = doc.id;
+      badges.push(badgeData);
+    });
+
+    if (orderByCategory) {
+      const orderedBadges: Record<string, Badge[]> = {};
+      badges.forEach((badge) => {
+        if (orderedBadges[badge.category]) {
+          orderedBadges[badge.category].push(badge);
+        } else {
+          orderedBadges[badge.category] = [badge];
+        }
+      });
+      console.log(orderedBadges);
+      res.status(200).json(orderedBadges);
+    } else {
+      console.log(badges);
+      res.status(200).json(badges);
+    }
+  } catch (error) {
+    console.error('Error fetching badges: ', error);
+    res.status(500).send('Error fetching badges');
   }
 };

@@ -1,5 +1,3 @@
-export { getUsers, createUser } from './users';
-
 import { Request, Response } from 'express';
 
 export const helloWorld = (req: Request, res: Response) => {
