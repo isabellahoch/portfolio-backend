@@ -76,10 +76,8 @@ export const fetchBadges = async (req: Request, res: Response) => {
           orderedBadges[badge.category] = [badge];
         }
       });
-      console.log(orderedBadges);
       res.status(200).json(orderedBadges);
     } else {
-      console.log(badges);
       res.status(200).json(badges);
     }
   } catch (error) {

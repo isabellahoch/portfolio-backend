@@ -80,8 +80,6 @@ export const fetchProjects = async (req: Request, res: Response) => {
       }
     });
 
-    console.log(updatedProjects);
-
     updatedProjects.sort((a, b) => b.precedence - a.precedence);
 
     res.status(200).json(updatedProjects);
