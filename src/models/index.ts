@@ -1,3 +1,3 @@
 export { User } from './user';
-export { Project } from './project';
+export { Project, ProjectUnpopulated } from './project';
 export { Badge } from './badge';

@@ -1,6 +1,8 @@
-import { collection, getDocs, addDoc } from 'firebase/firestore';
+import { collection, getDocs, addDoc, updateDoc } from 'firebase/firestore';
+import { QuerySnapshot, DocumentData } from 'firebase/firestore';
+import { query, where } from 'firebase/firestore';
 import { Request, Response } from 'express';
-import { Project } from '../models';
+import { Badge, Project, ProjectUnpopulated } from '../models';
 
 import { db } from '..';
 
@@ -8,27 +10,86 @@ export const fetchEmptyProjects = (req: Request, res: Response) => {
   res.status(200).json([]);
 }
 
+// export const fetchProjects = async (req: Request, res: Response) => {
+//   try {
+//     const projectCollection = collection(db, 'projects');
+//     const projectsSnapshot = await getDocs(projectCollection);
+
+//     const projects: Project[] = [];
+//     projectsSnapshot.forEach((doc) => {
+//       const projectData = doc.data();
+//       const projectWithId = { id: doc.id, ...projectData } as Project;
+//       projects.push(projectWithId);
+//     });
+
+//     console.log(projects);
+
+//     res.status(200).json(projects);
+//   } catch (error) {
+//     console.error('Error fetching projects: ', error);
+//     res.status(500).send('Error fetching projects');
+//   }
+// };
+
 export const fetchProjects = async (req: Request, res: Response) => {
   try {
     const projectCollection = collection(db, 'projects');
     const projectsSnapshot = await getDocs(projectCollection);
 
-    const projects: Project[] = [];
+    const projects: ProjectUnpopulated[] = [];
+    const badgeIds: string[] = [];
     projectsSnapshot.forEach((doc) => {
-      const projectData = doc.data();
-      const projectWithId = { id: doc.id, ...projectData } as Project;
-      projects.push(projectWithId);
+      const projectData = doc.data() as ProjectUnpopulated | undefined;
+      if (projectData) {
+        if (projectData?.badges) {
+          projects.push(projectData);
+          projectData.badges.forEach((badgeId) => {
+            if (!badgeIds.includes(badgeId as string)) {
+              badgeIds.push(badgeId as string);
+            }
+          });
+        }
+        else {
+          projects.push(projectData);
+        }
+      }
     });
 
-    console.log(projects);
+    const batchedBadges: Badge[] = [];
+    const badgesCollection = collection(db, 'badges');
+    const querySnapshot: QuerySnapshot<DocumentData> = await getDocs(query(badgesCollection, where('__name__', 'in', badgeIds)));
 
-    res.status(200).json(projects);
+    querySnapshot.forEach((doc) => {
+      batchedBadges.push({ id: doc.id, ...doc.data() } as Badge);
+    });
+
+    let updatedProjects: Project[] = [];
+
+    projects.forEach((project) => {
+      if (project?.badges && project.badges.length > 0) {
+        const updatedBadges = batchedBadges.filter((badge: Badge) => {
+          return project.badges?.includes(badge.id as string);
+        });
+        const updatedProject: Project = {
+          ...project,
+          badges: updatedBadges
+        };
+        updatedProjects.push(updatedProject);
+      } else {
+        updatedProjects.push(project as Project);
+      }
+    });
+
+    console.log(updatedProjects);
+
+    updatedProjects.sort((a, b) => b.precedence - a.precedence);
+
+    res.status(200).json(updatedProjects);
   } catch (error) {
     console.error('Error fetching projects: ', error);
     res.status(500).send('Error fetching projects');
   }
 };
-
 
 export const fetchStaticProjects = (req: Request, res: Response) => {
   res.status(200).json([
